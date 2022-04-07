@@ -1,100 +1,43 @@
-let runningTotal = 0;
-let buffer = "0";
-let previousOperator = null;
-
-const screen = document.querySelector('.screen');
-
-function buttonClick(value) {
-    if (isNaN(value)) {
-        // not a number
-        handleSymbol(value);
-    } else {
-        // is a number
-        handleNumber(value);
+let weather = {
+    "apiKey": "d685c4dbe4608ce77d2033497166062b",
+    fetchWeather: function(city) {
+        fetch(
+        "https://api.openweathermap.org/data/2.5/weather?q=" 
+        + city 
+        + "&units=metric&appid=" 
+        + this.apiKey
+       )
+        .then((response) => response.json())
+        .then((data) => this.displayWeather(data));
+    },
+    displayWeather: function(data) {
+        const { name } = data;
+        const { icon, description } = data.weather[0];
+        const { temp, humidity } = data.main;
+        const { speed } = data.wind;
+        console.log(name, icon, description, temp, humidity, speed);
+        document.querySelector(".city").innerText = "Weather in " + name;
+        document.querySelector(".icon").src = "https://openweathermap.org/img/wn/" + icon + ".png";
+        document.querySelector(".description").innerText = description;
+        document.querySelector(".temp").innerText = temp + "°C";
+        document.querySelector(".humidity").innerText = "Humidity: " + humidity + "%";
+        document.querySelector(".wind").innerText = "Wind speed: " + speed + "km/h";
+        document.querySelector(".weather").classList.remove("loading");
+        document.body.style.backgroundImage = "url(https://source.unsplash.com/1600x900/?" + name + ")";
+    },
+    search: function() {
+        this.fetchWeather(document.querySelector(".search-bar").value);
     }
-    screen.innerText = buffer;
-}
+};
 
-function handleSymbol(symbol) {
-    switch(symbol) {
-        case 'C':
-            buffer = '0';
-            runningTotal = 0;
-            break;
-        case '=':
-            if (previousOperator === null) {
-                // need two numbers to do math
-                return;
-            }
-            flushOperation(parseInt(buffer));
-            previousOperator = null;
-            buffer = runningTotal;
-            runningTotal = 0;
-            break;
-        case '←':
-            if (buffer.length === 1) {
-                buffer = '0';
-            } else {
-                buffer = buffer.substring(0, buffer.length - 1);
-            }
-            break;
-        case '-':
-        case '+':
-        case '*':
-        case '÷':
-            handleMath(symbol);
-            break;
+document
+    .querySelector(".search button")
+    .addEventListener("click", function() {
+        weather.search();
+});
+
+document.querySelector(".search-bar").addEventListener("keyup", function(event) {
+    if (event.key == "Enter") {
+        weather.search();
     }
-}
-
-function handleMath(symbol) {
-    console.log('handleMath', symbol);
-    if (buffer === '0') {
-        // do nothing 
-        return;
-    }
-
-    const intBuffer = parseInt(buffer);
-
-    if (runningTotal === 0) {
-        runningTotal = intBuffer
-    } else {
-        flushOperation(intBuffer);
-    }
-
-    previousOperator = symbol;
-
-    buffer = '0';
-}
-
-function flushOperation(intBuffer) {
-    if (previousOperator === '+') {
-        runningTotal += intBuffer;
-    } else if (previousOperator === '-') {
-        runningTotal -= intBuffer;
-    } else if (previousOperator === '*') {
-        runningTotal *= intBuffer;
-    } else {
-        runningTotal /= intBuffer;
-    }
-}
-
-function handleNumber(numberString) {
-    if (buffer === '0') {
-        buffer = numberString;
-    } else {
-        buffer += numberString;
-    }
-}
-
-
-
-function init() {
-    document.querySelector('.calc-buttons').addEventListener('click', function(event) {
-        buttonClick(event.target.innerText);
-    })    
-}
-
-init();
-
-
+})
